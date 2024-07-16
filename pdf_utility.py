@@ -1,7 +1,13 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 import PyPDF2
 import fitz  # PyMuPDF
+
+# Define colors for dark theme
+BG_COLOR = "#1e1e1e"  # Background color
+FG_COLOR = "#ffffff"  # Text color
+BUTTON_BG = "#333333"  # Button background color
+BUTTON_FG = "#ffffff"  # Button text color
 
 def merge_pdfs():
     file_paths = filedialog.askopenfilenames(title="Select PDFs", filetypes=[("PDF files", "*.pdf")])
@@ -33,9 +39,20 @@ def split_pdf():
         pdf_reader = PyPDF2.PdfReader(file_path)
         total_pages = len(pdf_reader.pages)
         
-        start_page = int(input("Enter the start page for the first split (1 to {}): ".format(total_pages)))
-        end_page = int(input("Enter the end page for the first split ({} to {}): ".format(start_page, total_pages)))
+        # Ask for start page number in a popup window
+        start_page_str = simpledialog.askstring("Split PDF", f"Enter the start page (1 to {total_pages}):")
+        if not start_page_str:
+            return
+        start_page = int(start_page_str)
+
+        # Ask for end page number in a popup window and lift it to the top
+        end_page_str = simpledialog.askstring("Split PDF", f"Enter the end page ({start_page} to {total_pages}):")
+        if not end_page_str:
+            return
+        end_page = int(end_page_str)
         
+        root.lift()
+
         pdf_writer1 = PyPDF2.PdfWriter()
         pdf_writer2 = PyPDF2.PdfWriter()
 
@@ -69,8 +86,12 @@ def delete_pages_from_pdf():
         pdf_reader = PyPDF2.PdfReader(file_path)
         total_pages = len(pdf_reader.pages)
 
-        pages_to_delete = input(f"Enter the page numbers to delete (1 to {total_pages}), separated by commas: ")
-        pages_to_delete = [int(page.strip()) - 1 for page in pages_to_delete.split(",")]
+        # Ask for page numbers to delete in a popup window
+        pages_to_delete_str = simpledialog.askstring("Delete Pages", f"Enter the page numbers to delete (1 to {total_pages}), separated by commas:")
+        if not pages_to_delete_str:
+            return
+
+        pages_to_delete = [int(page.strip()) - 1 for page in pages_to_delete_str.split(",")]
 
         pdf_writer = PyPDF2.PdfWriter()
         for page_num in range(total_pages):
@@ -106,27 +127,44 @@ def pdf_to_jpg():
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
-
 def create_gui():
     root = tk.Tk()
     root.title("PDF Utility")
 
-    frame = tk.Frame(root, padx=10, pady=10)
-    frame.pack(padx=10, pady=10)
+    # Centering the window on screen
+    window_width = 400
+    window_height = 300
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-    merge_button = tk.Button(frame, text="Merge PDFs", command=merge_pdfs)
-    merge_button.pack(pady=5)
+    # Set dark theme for window
+    root.configure(bg=BG_COLOR)
+    root.option_add("*Font", "Helvetica")
+    root.option_add("*Background", BG_COLOR)
+    root.option_add("*Foreground", FG_COLOR)
 
-    split_button = tk.Button(frame, text="Split PDF", command=split_pdf)
-    split_button.pack(pady=5)
+    # Frame for buttons
+    frame = tk.Frame(root, padx=10, pady=10, bg=BG_COLOR)
+    frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-    delete_button = tk.Button(frame, text="Delete Pages from PDF", command=delete_pages_from_pdf)
-    delete_button.pack(pady=5)
+    # Button styles
+    button_style = {"font": ("Helvetica", 12), "padx": 20, "pady": 10, "bd": 2, "bg": BUTTON_BG, "fg": BUTTON_FG}
 
-    pdf_to_jpg_button = tk.Button(frame, text="PDF to JPG", command=pdf_to_jpg)
-    pdf_to_jpg_button.pack(pady=5)
+    # Buttons
+    merge_button = tk.Button(frame, text="Merge PDFs", command=merge_pdfs, **button_style)
+    merge_button.pack(pady=5, fill=tk.X)
 
-   
+    split_button = tk.Button(frame, text="Split PDF", command=split_pdf, **button_style)
+    split_button.pack(pady=5, fill=tk.X)
+
+    delete_button = tk.Button(frame, text="Delete Pages from PDF", command=delete_pages_from_pdf, **button_style)
+    delete_button.pack(pady=5, fill=tk.X)
+
+    pdf_to_jpg_button = tk.Button(frame, text="PDF to JPG", command=pdf_to_jpg, **button_style)
+    pdf_to_jpg_button.pack(pady=5, fill=tk.X)
 
     root.mainloop()
 
